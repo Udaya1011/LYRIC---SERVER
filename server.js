@@ -7,6 +7,8 @@ const dotenv = require("dotenv");
 dotenv.config(); // Load environment variables
 
 const app = express();
+
+// Middleware setup
 app.use(cors());
 app.use(bodyParser.json({ limit: "10mb" }));
 
@@ -121,6 +123,11 @@ app.put("/api/songs/:id", async (req, res) => {
   }
 });
 
-// Start server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+// Increase the keep-alive timeout and headers timeout to prevent worker timeout errors
+const server = app.listen(process.env.PORT || 5000, "0.0.0.0", () => {
+  console.log(`🚀 Server running on http://localhost:${process.env.PORT || 5000}`);
+});
+
+// Timeout adjustments
+server.keepAliveTimeout = 120000;  // 120 seconds
+server.headersTimeout = 120000;    // 120 seconds
