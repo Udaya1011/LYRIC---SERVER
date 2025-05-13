@@ -4,20 +4,23 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const dotenv = require("dotenv");
 
-dotenv.config(); // Load environment variables
+dotenv.config(); // Load environment variables from .env file
 
 const app = express();
 
-// Middleware setup
+// Middleware
 app.use(cors());
 app.use(bodyParser.json({ limit: "10mb" }));
 
-// Connect to MongoDB (clean version without deprecated options)
+// Connect to MongoDB (clean, modern version)
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ Connected to MongoDB Atlas"))
-  .catch((err) => console.error("❌ MongoDB connection error:", err));
+  .catch((err) => {
+    console.error("❌ MongoDB connection error:", err.message);
+    process.exit(1);
+  });
 
-// User Schema and Model
+// === Mongoose Schemas ===
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: String,
@@ -27,7 +30,6 @@ const userSchema = new mongoose.Schema({
 });
 const User = mongoose.model("User", userSchema);
 
-// Song Schema and Model
 const songSchema = new mongoose.Schema({
   song: { type: String, required: true },
   lyricist: String,
@@ -36,7 +38,9 @@ const songSchema = new mongoose.Schema({
 });
 const Song = mongoose.model("Song", songSchema);
 
-// Register
+// === Routes ===
+
+// Register user
 app.post("/api/register", async (req, res) => {
   try {
     const user = new User(req.body);
@@ -47,7 +51,7 @@ app.post("/api/register", async (req, res) => {
   }
 });
 
-// Login
+// Login user
 app.post("/api/login", async (req, res) => {
   try {
     const { name, pass } = req.body;
@@ -123,11 +127,12 @@ app.put("/api/songs/:id", async (req, res) => {
   }
 });
 
-// Increase the keep-alive timeout and headers timeout to prevent worker timeout errors
-const server = app.listen(process.env.PORT || 5000, "0.0.0.0", () => {
-  console.log(`🚀 Server running on http://localhost:${process.env.PORT || 5000}`);
+// === Server Launch ===
+const PORT = process.env.PORT || 5000;
+const server = app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
 
-// Timeout adjustments
-server.keepAliveTimeout = 120000;  // 120 seconds
-server.headersTimeout = 120000;    // 120 seconds
+// Prevent Render/Heroku timeout issues
+server.keepAliveTimeout = 120000;
+server.headersTimeout = 130000;
